@@ -2,20 +2,23 @@ from models import Move, MoveFlag
 from board import Board
 from typing import List, Tuple, Optional
 
+
 class ChessEngine:
-    def __init__(self, fen: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"):
+    def __init__(
+        self, fen: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    ):
         self.board = Board()
         self.white_to_move = True
         self.castling_rights = {"K": False, "Q": False, "k": False, "q": False}
         self.en_passant_target: Optional[Tuple[int, int]] = None
         self.move_history: List[Move] = []
-        
+
         self.load_fen(fen)
 
     def load_fen(self, fen: str):
         parts = fen.split(" ")
         ranks = parts[0].split("/")
-        
+
         # 1. Piece Placement
         for r, rank in enumerate(ranks):
             c = 0
@@ -25,19 +28,19 @@ class ChessEngine:
                 else:
                     self.board.place_piece(char, r, c)
                     c += 1
-        
+
         # 2. Side to move
-        self.white_to_move = (parts[1] == 'w')
-        
+        self.white_to_move = parts[1] == "w"
+
         # 3. Castling
         if parts[2] != "-":
             for char in parts[2]:
                 if char in self.castling_rights:
                     self.castling_rights[char] = True
-                    
+
         # 4. En Passant
         if parts[3] != "-":
-            col = ord(parts[3][0]) - ord('a')
+            col = ord(parts[3][0]) - ord("a")
             row = 8 - int(parts[3][1])
             self.en_passant_target = (row, col)
 
@@ -132,11 +135,11 @@ class ChessEngine:
         for move in pseudo_moves:
             # Play move without triggering game status checks to avoid recursion
             self.play_move(move, update_status=False)
-            
+
             # Since turn was toggled in play_move, verify if the player who JUST moved is in check
             if not self.is_in_check(not self.white_to_move):
                 legal_moves.append(move)
-                
+
             self.undo_move()
 
         return legal_moves
@@ -149,16 +152,20 @@ class ChessEngine:
 
     def _update_castling_rights(self, move: Move):
         p = move.piece_moved
-        if p == 'K':
-            self.castling_rights['K'] = self.castling_rights['Q'] = False
-        elif p == 'k':
-            self.castling_rights['k'] = self.castling_rights['q'] = False
-        elif p == 'R':
-            if move.start_sq == (7, 7): self.castling_rights['K'] = False
-            elif move.start_sq == (7, 0): self.castling_rights['Q'] = False
-        elif p == 'r':
-            if move.start_sq == (0, 7): self.castling_rights['k'] = False
-            elif move.start_sq == (0, 0): self.castling_rights['q'] = False
+        if p == "K":
+            self.castling_rights["K"] = self.castling_rights["Q"] = False
+        elif p == "k":
+            self.castling_rights["k"] = self.castling_rights["q"] = False
+        elif p == "R":
+            if move.start_sq == (7, 7):
+                self.castling_rights["K"] = False
+            elif move.start_sq == (7, 0):
+                self.castling_rights["Q"] = False
+        elif p == "r":
+            if move.start_sq == (0, 7):
+                self.castling_rights["k"] = False
+            elif move.start_sq == (0, 0):
+                self.castling_rights["q"] = False
 
     def _get_pseudo_legal_moves(self, is_white: bool) -> List[Move]:
         moves = []
@@ -175,7 +182,7 @@ class ChessEngine:
         is_white = piece.isupper()
 
         # Pawns
-        if p_type == 'p':
+        if p_type == "p":
             direction = -1 if is_white else 1
             start_rank = 6 if is_white else 1
             promo_rank = 0 if is_white else 7
@@ -184,15 +191,27 @@ class ChessEngine:
             nr = r + direction
             if 0 <= nr < 8 and self.board.is_empty(nr, c):
                 if nr == promo_rank:
-                    for choice in (['Q', 'R', 'B', 'N'] if is_white else ['q', 'r', 'b', 'n']):
-                        moves.append(Move((r, c), (nr, c), piece, flags=MoveFlag.PROMOTION, promotion_choice=choice))
+                    for choice in (
+                        ["Q", "R", "B", "N"] if is_white else ["q", "r", "b", "n"]
+                    ):
+                        moves.append(
+                            Move(
+                                (r, c),
+                                (nr, c),
+                                piece,
+                                flags=MoveFlag.PROMOTION,
+                                promotion_choice=choice,
+                            )
+                        )
                 else:
                     moves.append(Move((r, c), (nr, c), piece, flags=MoveFlag.NORMAL))
 
                 # Double Step
                 nnr = r + 2 * direction
                 if r == start_rank and self.board.is_empty(nnr, c):
-                    moves.append(Move((r, c), (nnr, c), piece, flags=MoveFlag.PAWN_DOUBLE))
+                    moves.append(
+                        Move((r, c), (nnr, c), piece, flags=MoveFlag.PAWN_DOUBLE)
+                    )
 
             # Captures & En Passant
             for dc in [-1, 1]:
@@ -201,23 +220,78 @@ class ChessEngine:
                     target = self.board.get_piece(nr, nc)
                     if target and target.isupper() != is_white:
                         if nr == promo_rank:
-                            for choice in (['Q', 'R', 'B', 'N'] if is_white else ['q', 'r', 'b', 'n']):
-                                moves.append(Move((r, c), (nr, nc), piece, target, flags=MoveFlag.PROMOTION | MoveFlag.CAPTURE, promotion_choice=choice))
+                            for choice in (
+                                ["Q", "R", "B", "N"]
+                                if is_white
+                                else ["q", "r", "b", "n"]
+                            ):
+                                moves.append(
+                                    Move(
+                                        (r, c),
+                                        (nr, nc),
+                                        piece,
+                                        target,
+                                        flags=MoveFlag.PROMOTION | MoveFlag.CAPTURE,
+                                        promotion_choice=choice,
+                                    )
+                                )
                         else:
-                            moves.append(Move((r, c), (nr, nc), piece, target, flags=MoveFlag.CAPTURE))
+                            moves.append(
+                                Move(
+                                    (r, c),
+                                    (nr, nc),
+                                    piece,
+                                    target,
+                                    flags=MoveFlag.CAPTURE,
+                                )
+                            )
                     elif (nr, nc) == self.en_passant_target:
-                        moves.append(Move((r, c), (nr, nc), piece, flags=MoveFlag.EN_PASSANT | MoveFlag.CAPTURE))
+                        moves.append(
+                            Move(
+                                (r, c),
+                                (nr, nc),
+                                piece,
+                                flags=MoveFlag.EN_PASSANT | MoveFlag.CAPTURE,
+                            )
+                        )
 
         # Knights, Bishops, Rooks, Queens, Kings
         else:
             offsets = {
-                'n': [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)],
-                'b': [(-1, -1), (-1, 1), (1, -1), (1, 1)],
-                'r': [(-1, 0), (1, 0), (0, -1), (0, 1)],
-                'q': [(-1, -1), (-1, 1), (1, -1), (1, 1), (-1, 0), (1, 0), (0, -1), (0, 1)],
-                'k': [(-1, -1), (-1, 1), (1, -1), (1, 1), (-1, 0), (1, 0), (0, -1), (0, 1)]
+                "n": [
+                    (-2, -1),
+                    (-2, 1),
+                    (-1, -2),
+                    (-1, 2),
+                    (1, -2),
+                    (1, 2),
+                    (2, -1),
+                    (2, 1),
+                ],
+                "b": [(-1, -1), (-1, 1), (1, -1), (1, 1)],
+                "r": [(-1, 0), (1, 0), (0, -1), (0, 1)],
+                "q": [
+                    (-1, -1),
+                    (-1, 1),
+                    (1, -1),
+                    (1, 1),
+                    (-1, 0),
+                    (1, 0),
+                    (0, -1),
+                    (0, 1),
+                ],
+                "k": [
+                    (-1, -1),
+                    (-1, 1),
+                    (1, -1),
+                    (1, 1),
+                    (-1, 0),
+                    (1, 0),
+                    (0, -1),
+                    (0, 1),
+                ],
             }
-            is_sliding = p_type in ['b', 'r', 'q']
+            is_sliding = p_type in ["b", "r", "q"]
 
             for dr, dc in offsets[p_type]:
                 nr, nc = r + dr, c + dc
@@ -226,7 +300,11 @@ class ChessEngine:
                     if not target:
                         moves.append(Move((r, c), (nr, nc), piece))
                     elif target.isupper() != is_white:
-                        moves.append(Move((r, c), (nr, nc), piece, target, flags=MoveFlag.CAPTURE))
+                        moves.append(
+                            Move(
+                                (r, c), (nr, nc), piece, target, flags=MoveFlag.CAPTURE
+                            )
+                        )
                         break
                     else:
                         break  # Blocked by own piece

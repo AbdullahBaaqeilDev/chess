@@ -30,6 +30,6 @@ class Board:
         return self.get_piece(r, c) == ""
 
     def get_king_pos(self, is_white: bool):
-        king = 'K' if is_white else 'k'
+        king = "K" if is_white else "k"
         locations = self.piece_locations[king]
         return next(iter(locations)) if locations else None

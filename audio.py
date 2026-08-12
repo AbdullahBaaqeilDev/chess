@@ -1,6 +1,7 @@
 import pygame
 from models import MoveFlag
 
+
 class AudioController:
     def __init__(self):
         # pygame.mixer.init()
@@ -10,7 +11,7 @@ class AudioController:
             "capture": pygame.mixer.Sound("assets/audio/sfx/capture.wav"),
             "check": pygame.mixer.Sound("assets/audio/sfx/check.wav"),
             "checkmate": pygame.mixer.Sound("assets/audio/sfx/checkmate.wav"),
-            "promote": pygame.mixer.Sound("assets/audio/sfx/promote.wav")
+            "promote": pygame.mixer.Sound("assets/audio/sfx/promote.wav"),
         }
 
     def play_for_move(self, move):
@@ -27,4 +28,5 @@ class AudioController:
 
     def _play(self, sound_key):
         # print(f"[AUDIO] Playing sound: {sound_key}.wav")
-        if self.sounds[sound_key]: self.sounds[sound_key].play()
+        if self.sounds[sound_key]:
+            self.sounds[sound_key].play()

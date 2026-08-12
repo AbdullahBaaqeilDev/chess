@@ -2,6 +2,7 @@ from enum import Flag, auto
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, Dict
 
+
 class MoveFlag(Flag):
     NORMAL = auto()
     CAPTURE = auto()
@@ -13,6 +14,7 @@ class MoveFlag(Flag):
     EN_PASSANT = auto()
     PROMOTION = auto()
     PAWN_DOUBLE = auto()
+
 
 @dataclass
 class Move:
